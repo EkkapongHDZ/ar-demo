@@ -1,47 +1,95 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>AR Video Example</title>
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.2.0/dist/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image.prod.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/aframe-mindar-image.prod.js"></script>
-    <style>
-      body { margin: 0; overflow: hidden; }
-      #ar-scene { width: 100vw; height: 100vh; }
-    </style>
-  </head>
-  <body>
-    <a-scene mindar-image="imageTargetSrc: ./assets/target.mind; autoStart: true; uiScanning: true;" 
-             vr-mode-ui="enabled: false" 
-             device-orientation-permission-ui="enabled: true" 
-             embedded id="ar-scene">
-      <a-assets>
-            <video id="video" src="./assets/video.mp4" preload="auto" loop muted playsinline webkit-playsinline></video>
-      </a-assets>
-
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-  
-    </a-scene>
-<script>
-  const video = document.querySelector("#video");
-
-  // ให้เริ่มเล่น video ตอน detect marker ทันที
-  AFRAME.registerComponent("videohandler", {
-    init: function () {
-      this.el.addEventListener("targetFound", () => {
-        video.play();
-      });
-      this.el.addEventListener("targetLost", () => {
-        video.pause();
-      });
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>AR Marker Infographic Demo</title>
+  <!-- A-Frame -->
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <!-- AR.js for A-Frame (marker-based) -->
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <style>
+    body, html { margin:0; height:100%; font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial; }
+    #ui {
+      position: absolute;
+      left: 12px; top: 12px;
+      z-index: 10;
+      display:flex; gap:8px; align-items:center;
     }
-  });
-</script>
+    .button { background:rgba(0,0,0,0.6); color:#fff; border-radius:8px; padding:8px 12px; cursor:pointer; }
+    .hint { background:rgba(255,255,255,0.9); padding:8px 12px; border-radius:8px; color:#111 }
+    .notice { position: absolute; left:12px; bottom:12px; background:rgba(255,255,255,0.9); padding:8px 12px; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <div class="hint">Point your camera to the <strong>Hiro</strong> marker (QR-like marker) to see the infographic.</div>
+    <div class="button" id="toggleInfo">Toggle Info</div>
+  </div>
+  <div class="notice">Tip: allow camera access. Works best on mobile (HTTPS).</div>
 
-<a-entity mindar-image-target="targetIndex: 0" videohandler>
-  <a-video src="#video" width="1" height="0.5625" position="0 0 0"></a-video>
-</a-entity>
-  </body>
+  <!-- A-Frame scene with AR.js marker tracking -->
+  <a-scene embedded arjs='trackingMethod: best; sourceType: webcam; debugUIEnabled: false;'>
+
+    <!-- Marker: use the built-in 'hiro' pattern. Print or show the Hiro marker on another screen. -->
+    <a-marker preset="hiro" id="marker">
+
+      <!-- Infographic panel: a thin plane that faces the camera -->
+      <a-entity id="infographic" visible="true" rotation="-90 0 0">
+        <!-- background plane -->
+        <a-plane position="0 0 0" width="1.2" height="0.7" material="color: #ffffff; opacity: 0.95"></a-plane>
+
+        <!-- Title -->
+        <a-text value="Solar Panel Facts" position="0 0.22 0.01" align="center" width="1.0" color="#111" wrap-count="30" font="https://cdn.aframe.io/fonts/mozillavr.fnt"></a-text>
+
+        <!-- Bullet points -->
+        <a-text value="• Clean energy source
+• Low operating cost
+• Lifetime: 25–30 years" position="-0.49 0.02 0.01" align="left" width="1.0" color="#333" wrap-count="40"></a-text>
+
+        <!-- Small chart: three colored bars -->
+        <a-box position="-0.33 -0.25 0.01" depth="0.02" height="0.2" width="0.15" material="color: #4caf50"></a-box>
+        <a-box position="0.0 -0.25 0.01"  depth="0.02" height="0.14" width="0.15" material="color: #ffb300"></a-box>
+        <a-box position="0.33 -0.25 0.01" depth="0.02" height="0.08" width="0.15" material="color: #ef5350"></a-box>
+
+        <!-- Footer small label -->
+        <a-text value="Source: Example Data" position="0 -0.37 0.01" align="center" width="1.0" color="#666" wrap-count="40"></a-text>
+      </a-entity>
+
+      <!-- 3D model or decorative object above the panel -->
+      <a-cone position="0 0.7 0" radius-bottom="0.12" radius-top="0.0" height="0.25" rotation="0 0 0" material="color:#2196f3"></a-cone>
+
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    // Toggle visibility of the infographic
+    const btn = document.getElementById('toggleInfo');
+    const info = document.getElementById('infographic');
+    btn.addEventListener('click', () => {
+      info.setAttribute('visible', info.getAttribute('visible') === 'true' ? 'false' : 'true');
+    });
+
+    // Optional: scale infographic depending on marker detection distance (simple example)
+    const marker = document.getElementById('marker');
+    marker.addEventListener('markerFound', function() {
+      console.log('marker found');
+    });
+    marker.addEventListener('markerLost', function() {
+      console.log('marker lost');
+    });
+
+    // Simple auto-rotate for the cone while marker visible
+    let rotating = true;
+    setInterval(() => {
+      const cone = document.querySelector('a-cone');
+      if (!cone) return;
+      const rot = cone.getAttribute('rotation');
+      cone.setAttribute('rotation', { x: rot.x, y: rot.y + 1, z: rot.z });
+    }, 50);
+  </script>
+
+</body>
 </html>
